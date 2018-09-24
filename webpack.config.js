@@ -9,6 +9,7 @@ module.exports = {
 		path: path.resolve(__dirname, 'dist'),
 		filename: 'report.[chunkhash].js'
 	},
+	node: { fs: 'empty' },
 	module: {
 		rules: [{
 				test: /\.js$/,

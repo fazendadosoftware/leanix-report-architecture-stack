@@ -10,6 +10,8 @@ import MissingDataAlert from './common/react-leanix-reporting/MissingDataAlert';
 import DataHandler from './DataHandler';
 import ConfigureDialog from './ConfigureDialog';
 import Matrix from './Matrix';
+import Excel from 'exceljs/dist/es5/exceljs.browser';
+import FileSaver from 'file-saver'
 
 const SELECT_FIELD_STYLE = {
 	width: '300px',
@@ -216,7 +218,20 @@ class Report extends Component {
 					this.setState({
 						showConfigure: true
 					});
-				}
+				},
+				customDropdowns: [
+					{
+						id: 'customReport',
+						name: 'Actions',
+						entries: [
+							{
+								id: 'exportXLS',
+								name: 'Export to XLS',
+								callback: () => this._exportXLS()
+							}
+						]
+					}
+				]
 			},
 			export: {
 				autoScale: true,
@@ -238,6 +253,49 @@ class Report extends Component {
 			}
 		};
 	}
+
+	_exportXLS() {
+		const timestampPrefix = (() => {
+			const now = new Date()
+			const year = now.getFullYear()
+			const month = ('0' + now.getMonth()).slice(-2)
+			const date = ('0' + now.getDate()).slice(-2)
+			const hours = now.getHours()
+			const minutes = now.getMinutes()
+			return `${year}${month}${date}${hours}${minutes}`
+		})()
+		const selectedFactSheetType = this.reportState.get('selectedFactsheetType') || '';
+
+		const matrixData = JSON.parse(JSON.stringify(this.state.matrixData)) // make a deep copy of matrixData
+		const factsheetType = selectedFactSheetType.toLowerCase()
+		const filename = `${timestampPrefix}_architecture_stack_${factsheetType}_${this.reportState.get('selectedYAxis').key}_${this.reportState.get('selectedXAxis').key}.xlsx`
+		const xAxisCategories = matrixData.shift().slice(1) || []
+
+		const rows = matrixData.map(row => Array.from([row.shift(), ...row.map(type => type.map(t => t.name).join(', '))]))
+
+		const workbook = new Excel.Workbook()
+		const sheet = workbook.addWorksheet(selectedFactSheetType, {properties:{tabColor:{argb:'FFC0000'}}})
+		sheet.columns = [
+			{ header: '', key: this.reportState.get('selectedYAxis').key, width: 40 },
+			{ header: this.reportState.get('selectedXAxis').label, key: this.reportState.get('selectedYAxis').key }
+		];
+		let factsheetTitleCell = sheet.getCell('A1')
+		factsheetTitleCell = Object.assign(factsheetTitleCell, {
+			font: { bold: true },
+			value: `${selectedFactSheetType}s`,
+			fill: {type: 'pattern', pattern:'solid', fgColor:{argb:'E0E0E0'}}
+		})
+
+		sheet.mergeCells(`B1:${String.fromCharCode('B'.charCodeAt(0) + xAxisCategories.length - 1)}1`)
+		sheet.getCell('B1').alignment = { horizontal: 'center' }
+		sheet.getCell('B1').font = { bold: true }
+		sheet.getCell('A2').font = { bold: true }
+		sheet.addRows(rows)
+		workbook.xlsx.writeBuffer()
+			.then(data => FileSaver.saveAs(new Blob([data], {type: "application/octet-stream"}), filename))
+			.catch(err => { console.error(err) });
+	}
+
 
 	_createAllViewInfosQuery() {
 		const query = this.factsheetTypes.map((e) => {
