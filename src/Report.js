@@ -265,32 +265,41 @@ class Report extends Component {
 			return `${year}${month}${date}${hours}${minutes}`
 		})()
 		const selectedFactSheetType = this.reportState.get('selectedFactsheetType') || '';
-
+	
 		const matrixData = JSON.parse(JSON.stringify(this.state.matrixData)) // make a deep copy of matrixData
-		const factsheetType = selectedFactSheetType.toLowerCase()
-		const filename = `${timestampPrefix}_architecture_stack_${factsheetType}_${this.reportState.get('selectedYAxis').key}_${this.reportState.get('selectedXAxis').key}.xlsx`
-		const xAxisCategories = matrixData.shift().slice(1) || []
+		const zLabel = this.viewModel.label
+		const [xLabel, yLabel] = matrixData[0][0]
+		const xValues = matrixData[0].slice(1)
+		const yValues = matrixData.slice(1).map(row => row[0])
 
-		const rows = matrixData.map(row => Array.from([row.shift(), ...row.map(type => type.map(t => t.name).join(', '))]))
-
+		const rows = matrixData.slice(1).map(row => row.slice(1))
+		const sheetRows = rows.reduce((accumulator, row, i) => {
+			const yValue = yValues[i]
+			row.forEach((z, j) => {
+					const xValue = xValues[j]
+					z.forEach(factsheet => {
+						const legendItem = this.viewModel.legendItems[factsheet.colors.legendItemID]
+						const zValue = legendItem.value
+						accumulator.push([factsheet.id, selectedFactSheetType, factsheet.name, xValue, yValue, zValue])
+					})
+			})
+			return accumulator
+		}, [])
 		const workbook = new Excel.Workbook()
-		const sheet = workbook.addWorksheet(selectedFactSheetType, {properties:{tabColor:{argb:'FFC0000'}}})
+		const sheet = workbook.addWorksheet(selectedFactSheetType)
 		sheet.columns = [
-			{ header: '', key: this.reportState.get('selectedYAxis').key, width: 40 },
-			{ header: this.reportState.get('selectedXAxis').label, key: this.reportState.get('selectedYAxis').key }
+			{ header: 'ID', key: 'id', width: 40 },
+			{ header: 'FactsheetType', key: 'factsheetType', width: 40 },
+			{ header: 'Name', key: 'name' },
+			{ header: `X-Axis: ${xLabel}`, key: this.reportState.get('selectedXAxis').key },
+			{ header: `Y-Axis: ${yLabel}`, key: this.reportState.get('selectedYAxis').key },
+			{ header: `View: ${zLabel}`, key: zLabel }
 		];
-		let factsheetTitleCell = sheet.getCell('A1')
-		factsheetTitleCell = Object.assign(factsheetTitleCell, {
-			font: { bold: true },
-			value: `${selectedFactSheetType}s`,
-			fill: {type: 'pattern', pattern:'solid', fgColor:{argb:'E0E0E0'}}
-		})
-
-		sheet.mergeCells(`B1:${String.fromCharCode('B'.charCodeAt(0) + xAxisCategories.length - 1)}1`)
-		sheet.getCell('B1').alignment = { horizontal: 'center' }
-		sheet.getCell('B1').font = { bold: true }
-		sheet.getCell('A2').font = { bold: true }
-		sheet.addRows(rows)
+		sheet.columns.forEach(column => { column.width = column.header.length < 12 ? 12 : column.header.length });
+		sheet.getRow(1).font = { bold: true };
+		sheet.addRows(sheetRows)
+		const factsheetType = selectedFactSheetType.toLowerCase()
+		const filename = `${timestampPrefix}_architecture_stack_${factsheetType}_${this.viewModel.key}_${this.reportState.get('selectedYAxis').key}_${this.reportState.get('selectedXAxis').key}.xlsx`
 		workbook.xlsx.writeBuffer()
 			.then(data => FileSaver.saveAs(new Blob([data], {type: "application/octet-stream"}), filename))
 			.catch(err => { console.error(err) });
