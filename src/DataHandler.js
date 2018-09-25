@@ -160,6 +160,7 @@ function getQueryAttribute(model) {
 
 function createViewModel(viewData) {
 	const result = {
+		key: viewData.key,
 		label: viewData.label,
 		legendItems: {},
 		legendMapping: {}
