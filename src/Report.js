@@ -425,7 +425,8 @@ class Report extends Component {
 		// new factsheet type means also new view data
 		this.viewModel = null;
 		// update report config, this will trigger the facet callback automatically
-		lx.updateConfiguration(this._createConfig());
+		// lx.updateConfiguration(this._createConfig());
+		lx.ready(this._createConfig())
 		return true;
 	}
 
