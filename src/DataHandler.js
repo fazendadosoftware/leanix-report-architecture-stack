@@ -328,7 +328,7 @@ function _getDataValues(model, additionalData, tagGroups) {
 			if (dataValues === undefined || dataValues === null) {
 				break;
 			}
-			dataValues = [dataValues];
+			dataValues = Array.isArray(dataValues) ? [...dataValues]: [dataValues];
 			break;
 		case 'FIELD_RELATION':
 			const frSubIndex = additionalData[value[0]];
