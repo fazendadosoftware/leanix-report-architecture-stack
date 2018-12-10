@@ -40,6 +40,8 @@ class Report extends Component {
 		this.reportState = new ReportState();
 		this.reportState.prepareBooleanValue('showEmptyRows', false);
 		this.reportState.prepareBooleanValue('showEmptyColumns', false);
+		this.reportState.prepareBooleanValue('showFieldsOnRelations', false);
+		this.reportState.prepareBooleanValue('showFieldsOnRelatedFactSheets', false);
 		this.reportState.prepareBooleanValue('showMissingDataWarning', true);
 		// bindings
 		this._initReport = this._initReport.bind(this);
@@ -566,6 +568,7 @@ class Report extends Component {
 	}
 
 	_renderSelectFields(factsheetType) {
+		const { showFieldsOnRelatedFactSheets, showFieldsOnRelations } = this.reportState.get()
 		let xAxisOption = undefined;
 		let yAxisOption = undefined;
 		let xAxisOptions = [];
@@ -573,7 +576,8 @@ class Report extends Component {
 		if (factsheetType) {
 			xAxisOption = this.reportState.get('selectedXAxis').key;
 			yAxisOption = this.reportState.get('selectedYAxis').key;
-			const models = this.axisModels[factsheetType];
+			const models = (this.axisModels[factsheetType] || [])
+				.filter(model => !(!showFieldsOnRelatedFactSheets && model.type == 'FIELD_TARGET_FS' || !showFieldsOnRelations && model.type === 'FIELD_RELATION'))
 			xAxisOptions = this._filterAndMapModelsToViewOptions(models, (model) => {
 				// remove selected y axis from x axis options
 				return model.key !== yAxisOption;

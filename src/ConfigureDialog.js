@@ -12,11 +12,16 @@ class ConfigureDialog extends Component {
 	constructor(props) {
 		super(props);
 		this.configStore = null; // set during opening a configure dialog (see render)
+
 		// bindings
 		this._handleOnClose = this._handleOnClose.bind(this);
 		this._handleOnOK = this._handleOnOK.bind(this);
 		this._handleFactsheetTypeSelect = this._handleFactsheetTypeSelect.bind(this);
 		this._handleShowEmptyRowsCheck = this._handleShowEmptyRowsCheck.bind(this);
+
+		this._handleFieldsOnRelationsCheck = this._handleFieldsOnRelationsCheck.bind(this);
+		this._handleFieldsOnRelatedFactSheetsCheck = this._handleFieldsOnRelatedFactSheetsCheck.bind(this);
+
 		this._handleShowEmptyColumnsCheck = this._handleShowEmptyColumnsCheck.bind(this);
 		this._handleShowMissingDataWarningCheck = this._handleShowMissingDataWarningCheck.bind(this);
 		this._renderContent = this._renderContent.bind(this);
@@ -58,6 +63,16 @@ class ConfigureDialog extends Component {
 		}
 		this.configStore.showEmptyColumns = !val;
 		this.forceUpdate();
+	}
+
+	_handleFieldsOnRelationsCheck(val) {
+		this.configStore.showFieldsOnRelations = val
+		this.forceUpdate()
+	}
+
+	_handleFieldsOnRelatedFactSheetsCheck(val) {
+		this.configStore.showFieldsOnRelatedFactSheets = val
+		this.forceUpdate()
 	}
 
 	_handleShowMissingDataWarningCheck(val) {
@@ -108,6 +123,18 @@ class ConfigureDialog extends Component {
 					onChange={this._handleShowEmptyColumnsCheck}
 					hasError={errors.showEmptyColumns ? true : false}
 					helpText={errors.showEmptyColumns} />
+				<Checkbox id='showFieldsOnRelations' label='Show fields on relations'
+					useSmallerFontSize
+					value={this.configStore.showFieldsOnRelations}
+					onChange={this._handleFieldsOnRelationsCheck}
+					hasError={errors.showFieldsOnRelations ? true : false}
+					helpText={errors.showFieldsOnRelations} />
+				<Checkbox id='showFieldsOnRelatedFactSheets' label='Show fields on related Fact Sheets'
+					useSmallerFontSize
+					value={this.configStore.showFieldsOnRelatedFactSheets}
+					onChange={this._handleFieldsOnRelatedFactSheetsCheck}
+					hasError={errors.showFieldsOnRelatedFactSheets ? true : false}
+					helpText={errors.showFieldsOnRelatedFactSheets} />
 				<Checkbox id='showMissingDataWarning' label='Show missing data warning'
 					useSmallerFontSize
 					value={this.configStore.showMissingDataWarning}
